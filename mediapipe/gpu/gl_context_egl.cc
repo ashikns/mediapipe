@@ -14,6 +14,10 @@
 
 #include <utility>
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <EGL/eglext_angle.h>
+
 #include "absl/memory/memory.h"
 #include "mediapipe/framework/port/logging.h"
 #include "mediapipe/framework/port/ret_check.h"
@@ -30,6 +34,15 @@
 
 namespace mediapipe {
 
+static EGLDisplay GetCustomDisplay() {
+  std::vector<EGLAttrib> attribs;
+  attribs.push_back(EGL_PLATFORM_ANGLE_TYPE_ANGLE);
+  attribs.push_back(EGL_PLATFORM_ANGLE_TYPE_VULKAN_ANGLE);
+  attribs.push_back(EGL_NONE);
+  return eglGetPlatformDisplay(
+    EGL_PLATFORM_ANGLE_ANGLE, EGL_DEFAULT_DISPLAY, &attribs[0]);
+}
+
 static void EglThreadExitCallback(void* key_value) {
 #if defined(__ANDROID__)
   eglMakeCurrent(EGL_NO_DISPLAY, EGL_NO_SURFACE, EGL_NO_SURFACE,
@@ -40,8 +53,7 @@ static void EglThreadExitCallback(void* key_value) {
   // implementations, and should be considered as an undocumented vendor
   // extension.
   // https://www.khronos.org/registry/EGL/sdk/docs/man/html/eglMakeCurrent.xhtml
-  eglMakeCurrent(eglGetDisplay(EGL_DEFAULT_DISPLAY), EGL_NO_SURFACE,
-                 EGL_NO_SURFACE, EGL_NO_CONTEXT);
+  eglMakeCurrent(GetCustomDisplay(), EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 #endif
   eglReleaseThread();
 }
@@ -145,7 +157,7 @@ GlContext::StatusOrGlContext GlContext::Create(EGLContext share_context,
   EGLint major = 0;
   EGLint minor = 0;
 
-  display_ = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+  display_ = GetCustomDisplay();
   RET_CHECK(display_ != EGL_NO_DISPLAY)
       << "eglGetDisplay() returned error " << std::showbase << std::hex
       << eglGetError();
@@ -250,7 +262,7 @@ void GlContext::GetCurrentContextBinding(GlContext::ContextBinding* binding) {
     display = eglGetCurrentDisplay();
   }
   if (display == EGL_NO_DISPLAY) {
-    display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    display = GetCustomDisplay();
   }
   EGLBoolean success =
       eglMakeCurrent(display, new_binding.draw_surface,
