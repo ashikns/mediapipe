@@ -30,9 +30,6 @@
 
 namespace mediapipe {
 
-static pthread_key_t egl_release_thread_key;
-static pthread_once_t egl_release_key_once = PTHREAD_ONCE_INIT;
-
 static void EglThreadExitCallback(void* key_value) {
 #if defined(__ANDROID__)
   eglMakeCurrent(EGL_NO_DISPLAY, EGL_NO_SURFACE, EGL_NO_SURFACE,
@@ -49,22 +46,22 @@ static void EglThreadExitCallback(void* key_value) {
   eglReleaseThread();
 }
 
-// If a key has a destructor callback, and a thread has a non-NULL value for
-// that key, then the destructor is called when the thread exits.
-static void MakeEglReleaseThreadKey() {
-  int err = pthread_key_create(&egl_release_thread_key, EglThreadExitCallback);
-  if (err) {
-    LOG(ERROR) << "cannot create pthread key: " << err;
+struct ThreadExitCaller {
+  ThreadExitCaller() = default;
+  ~ThreadExitCaller() {
+    EglThreadExitCallback(reinterpret_cast<void*>(0xDEADBEEF));
   }
-}
+};
+
+static thread_local std::unique_ptr<ThreadExitCaller> exit_caller;
+static thread_local std::once_flag exit_caller_flag;
 
 // This function can be called any number of times. For any thread on which it
 // was called at least once, the EglThreadExitCallback will be called (once)
 // when the thread exits.
 static void EnsureEglThreadRelease() {
-  pthread_once(&egl_release_key_once, MakeEglReleaseThreadKey);
-  pthread_setspecific(egl_release_thread_key,
-                      reinterpret_cast<void*>(0xDEADBEEF));
+  std::call_once(exit_caller_flag, 
+    []() {  exit_caller = std::make_unique<ThreadExitCaller>();  });
 }
 
 GlContext::StatusOrGlContext GlContext::Create(std::nullptr_t nullp,

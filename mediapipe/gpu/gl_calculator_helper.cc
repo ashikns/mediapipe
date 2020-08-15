@@ -38,7 +38,7 @@ GlCalculatorHelper::~GlCalculatorHelper() {}
   CHECK(cc);
   // TODO return error from impl_ (needs two-stage init)
   impl_ = absl::make_unique<GlCalculatorHelperImpl>(
-      cc, &cc->Service(kGpuService).GetObject());
+      cc, &cc->Service(kGpuService).GetObject_());
   return ::mediapipe::OkStatus();
 }
 

@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <thread>
 
 #include "absl/base/dynamic_annotations.h"
 #include "absl/memory/memory.h"
@@ -67,17 +68,17 @@ static void SetThreadName(const char* name) {
 }
 
 GlContext::DedicatedThread::DedicatedThread() {
-  CHECK_EQ(pthread_create(&gl_thread_id_, nullptr, ThreadBody, this), 0);
+  gl_thread_ = std::thread(&GlContext::DedicatedThread::ThreadBody, this);
 }
 
 GlContext::DedicatedThread::~DedicatedThread() {
   if (IsCurrentThread()) {
     CHECK(self_destruct_);
-    CHECK_EQ(pthread_detach(gl_thread_id_), 0);
+    gl_thread_.detach();
   } else {
     // Give an invalid job to signal termination.
     PutJob({});
-    CHECK_EQ(pthread_join(gl_thread_id_, nullptr), 0);
+    gl_thread_.join();
   }
 }
 
@@ -101,12 +102,6 @@ void GlContext::DedicatedThread::PutJob(Job job) {
   absl::MutexLock lock(&mutex_);
   jobs_.push_back(std::move(job));
   has_jobs_cv_.SignalAll();
-}
-
-void* GlContext::DedicatedThread::ThreadBody(void* instance) {
-  DedicatedThread* thread = static_cast<DedicatedThread*>(instance);
-  thread->ThreadBody();
-  return nullptr;
 }
 
 #ifdef __APPLE__
@@ -171,7 +166,7 @@ void GlContext::DedicatedThread::RunWithoutWaiting(GlVoidFunction gl_func) {
 }
 
 bool GlContext::DedicatedThread::IsCurrentThread() {
-  return pthread_equal(gl_thread_id_, pthread_self());
+  return gl_thread_.get_id() == std::this_thread::get_id();
 }
 
 bool GlContext::ParseGlVersion(absl::string_view version_string, GLint* major,

@@ -15,8 +15,6 @@
 #ifndef MEDIAPIPE_GPU_GL_CONTEXT_H_
 #define MEDIAPIPE_GPU_GL_CONTEXT_H_
 
-#include <pthread.h>
-
 #include <atomic>
 #include <functional>
 #include <memory>

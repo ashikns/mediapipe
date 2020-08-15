@@ -96,7 +96,10 @@ cc_library(
     linkopts = GL_BASE_LINK_OPTS_OSS,
     textual_hdrs = ["gl_base.h"],
     visibility = ["//visibility:public"],
-    deps = [":gl_base_hdr"] + select({
+    deps = [
+        ":gl_base_hdr",
+        "@windows_angle//:angle",
+        ] + select({
         "//mediapipe:android": [],
         "//mediapipe:apple": [],
         "//conditions:default": [

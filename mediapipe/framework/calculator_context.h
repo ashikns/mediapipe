@@ -116,6 +116,7 @@ class CalculatorContext {
       return calculator_state_->IsServiceAvailable(service_);
     }
     T& GetObject() { return calculator_state_->GetServiceObject(service_); }
+    T& GetObject_() { return calculator_state_->GetServiceObject(service_); }
 
     ServiceBinding(CalculatorState* calculator_state,
                    const GraphService<T>& service)
