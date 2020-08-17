@@ -698,7 +698,7 @@ REGISTER_CALCULATOR(TfLiteInferenceCalculator);
     ASSIGN_OR_RETURN(model_path, mediapipe::PathToResourceAsFile(model_path));
 
     auto model = tflite::FlatBufferModel::BuildFromFile(model_path.c_str());
-    RET_CHECK(model) << "Failed to load model from path.";
+    RET_CHECK(model) << "Failed to load model from path:" << model_path;
     return MakePacket<TfLiteModelPtr>(TfLiteModelPtr(
         model.release(), [](tflite::FlatBufferModel* model) { delete model; }));
   }
