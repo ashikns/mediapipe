@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 package(default_visibility = ["//visibility:private"])
 
@@ -52,6 +52,7 @@ android_binary(
         "binaryGraphName": "hand_tracking_mobile_gpu.binarypb",
         "inputVideoStreamName": "input_video",
         "outputVideoStreamName": "output_video",
+        "flipFramesVertically": "True",
     },
     multidex = "native",
     deps = [

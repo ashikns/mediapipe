@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 android_library(
     name = "android_components",
@@ -25,6 +25,7 @@ android_library(
     ),
     visibility = ["//visibility:public"],
     deps = [
+        "//mediapipe/framework:calculator_java_proto_lite",
         "//mediapipe/java/com/google/mediapipe/framework:android_framework",
         "//mediapipe/java/com/google/mediapipe/glutil",
         "//third_party:androidx_appcompat",

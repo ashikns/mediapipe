@@ -14,7 +14,7 @@ load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library"
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 package(default_visibility = ["//mediapipe/examples:__subpackages__"])
 
@@ -30,7 +30,9 @@ mediapipe_cc_proto_library(
     name = "autoflip_messages_cc_proto",
     srcs = ["autoflip_messages.proto"],
     cc_deps = ["//mediapipe/framework:calculator_cc_proto"],
-    visibility = ["//mediapipe/examples:__subpackages__"],
+    visibility = [
+        "//mediapipe/examples:__subpackages__",
+    ],
     deps = [":autoflip_messages_proto"],
 )
 

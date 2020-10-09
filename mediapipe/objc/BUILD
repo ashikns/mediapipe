@@ -1,6 +1,6 @@
 package(default_visibility = ["//visibility:private"])
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 cc_library(
     name = "CFHolder",
@@ -16,6 +16,7 @@ cc_library(
     name = "util",
     srcs = ["util.cc"],
     hdrs = ["util.h"],
+    features = ["-parse_headers"],
     visibility = ["//mediapipe/framework:mediapipe_internal"],
     deps = [
         ":CFHolder",

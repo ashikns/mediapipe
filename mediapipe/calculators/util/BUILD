@@ -12,13 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library")
+load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library", "mediapipe_proto_library")
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["LICENSE"])
+
+cc_library(
+    name = "alignment_points_to_rects_calculator",
+    srcs = ["alignment_points_to_rects_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/calculators/util:detections_to_rects_calculator",
+        "//mediapipe/calculators/util:detections_to_rects_calculator_cc_proto",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework:calculator_options_cc_proto",
+        "//mediapipe/framework/formats:detection_cc_proto",
+        "//mediapipe/framework/formats:location_data_cc_proto",
+        "//mediapipe/framework/formats:rect_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/framework/port:status",
+    ],
+    alwayslink = 1,
+)
 
 proto_library(
     name = "annotation_overlay_calculator_proto",
@@ -320,6 +338,7 @@ cc_library(
         "//mediapipe/framework:calculator_options_cc_proto",
         "//mediapipe/framework/formats:image_format_cc_proto",
         "//mediapipe/util:color_cc_proto",
+        "@com_google_absl//absl/strings",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework/formats:image_frame",
         "//mediapipe/framework/formats:video_stream_header",
@@ -375,6 +394,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":timed_box_list_id_to_label_calculator_cc_proto",
+        "@com_google_absl//absl/container:node_hash_map",
         "//mediapipe/framework/port:status",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework:packet",
@@ -541,6 +561,19 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "rect_projection_calculator",
+    srcs = ["rect_projection_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:rect_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/framework/port:status",
+    ],
+    alwayslink = 1,
+)
+
 cc_test(
     name = "detections_to_rects_calculator_test",
     size = "small",
@@ -568,6 +601,15 @@ proto_library(
         "//mediapipe/framework:calculator_proto",
         "//mediapipe/util:color_proto",
         "//mediapipe/util:render_data_proto",
+    ],
+)
+
+proto_library(
+    name = "rect_to_render_scale_calculator_proto",
+    srcs = ["rect_to_render_scale_calculator.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_proto",
     ],
 )
 
@@ -686,6 +728,16 @@ mediapipe_cc_proto_library(
 )
 
 mediapipe_cc_proto_library(
+    name = "rect_to_render_scale_calculator_cc_proto",
+    srcs = ["rect_to_render_scale_calculator.proto"],
+    cc_deps = [
+        "//mediapipe/framework:calculator_cc_proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [":rect_to_render_scale_calculator_proto"],
+)
+
+mediapipe_cc_proto_library(
     name = "detections_to_render_data_calculator_cc_proto",
     srcs = ["detections_to_render_data_calculator.proto"],
     cc_deps = [
@@ -731,6 +783,7 @@ mediapipe_cc_proto_library(
 cc_library(
     name = "landmarks_to_render_data_calculator",
     srcs = ["landmarks_to_render_data_calculator.cc"],
+    hdrs = ["landmarks_to_render_data_calculator.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":landmarks_to_render_data_calculator_cc_proto",
@@ -813,6 +866,19 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "rect_to_render_scale_calculator",
+    srcs = ["rect_to_render_scale_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":rect_to_render_scale_calculator_cc_proto",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:rect_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+    ],
+    alwayslink = 1,
+)
+
 cc_test(
     name = "detections_to_render_data_calculator_test",
     size = "small",
@@ -875,6 +941,31 @@ cc_library(
         "//mediapipe/framework/formats:rect_cc_proto",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
+    ],
+    alwayslink = 1,
+)
+
+mediapipe_proto_library(
+    name = "landmarks_smoothing_calculator_proto",
+    srcs = ["landmarks_smoothing_calculator.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_options_proto",
+    ],
+)
+
+cc_library(
+    name = "landmarks_smoothing_calculator",
+    srcs = ["landmarks_smoothing_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":landmarks_smoothing_calculator_cc_proto",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework:timestamp",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/util/filtering:relative_velocity_filter",
+        "@com_google_absl//absl/algorithm:container",
     ],
     alwayslink = 1,
 )
@@ -951,6 +1042,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":top_k_scores_calculator_cc_proto",
+        "@com_google_absl//absl/container:node_hash_map",
         "//mediapipe/framework/formats:classification_cc_proto",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
@@ -1036,6 +1128,7 @@ cc_library(
         "//mediapipe/framework/formats:classification_cc_proto",
         "//mediapipe/framework/formats:landmark_cc_proto",
         "//mediapipe/framework/formats:rect_cc_proto",
+        "//mediapipe/framework/port:integral_types",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
         "@com_google_absl//absl/strings",

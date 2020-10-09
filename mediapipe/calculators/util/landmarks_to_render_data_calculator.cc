@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include "mediapipe/calculators/util/landmarks_to_render_data_calculator.h"
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -33,8 +34,6 @@ constexpr char kRenderScaleTag[] = "RENDER_SCALE";
 constexpr char kRenderDataTag[] = "RENDER_DATA";
 constexpr char kLandmarkLabel[] = "KEYPOINT";
 constexpr int kMaxLandmarkThickness = 18;
-
-using ::mediapipe::RenderAnnotation_Point;
 
 inline void SetColor(RenderAnnotation* annotation, const Color& color) {
   annotation->mutable_color()->set_r(color.r());
@@ -97,11 +96,17 @@ void AddConnectionToRenderData(const LandmarkType& start,
 template <class LandmarkListType, class LandmarkType>
 void AddConnectionsWithDepth(const LandmarkListType& landmarks,
                              const std::vector<int>& landmark_connections,
-                             float thickness, bool normalized, float min_z,
-                             float max_z, RenderData* render_data) {
+                             bool utilize_visibility,
+                             float visibility_threshold, float thickness,
+                             bool normalized, float min_z, float max_z,
+                             RenderData* render_data) {
   for (int i = 0; i < landmark_connections.size(); i += 2) {
     const auto& ld0 = landmarks.landmark(landmark_connections[i]);
     const auto& ld1 = landmarks.landmark(landmark_connections[i + 1]);
+    if (utilize_visibility && (ld0.visibility() < visibility_threshold ||
+                               ld1.visibility() < visibility_threshold)) {
+      continue;
+    }
     const int gray_val1 =
         255 - static_cast<int>(Remap(ld0.z(), min_z, max_z, 255));
     const int gray_val2 =
@@ -130,11 +135,16 @@ void AddConnectionToRenderData(const LandmarkType& start,
 template <class LandmarkListType, class LandmarkType>
 void AddConnections(const LandmarkListType& landmarks,
                     const std::vector<int>& landmark_connections,
+                    bool utilize_visibility, float visibility_threshold,
                     const Color& connection_color, float thickness,
                     bool normalized, RenderData* render_data) {
   for (int i = 0; i < landmark_connections.size(); i += 2) {
     const auto& ld0 = landmarks.landmark(landmark_connections[i]);
     const auto& ld1 = landmarks.landmark(landmark_connections[i + 1]);
+    if (utilize_visibility && (ld0.visibility() < visibility_threshold ||
+                               ld1.visibility() < visibility_threshold)) {
+      continue;
+    }
     AddConnectionToRenderData<LandmarkType>(ld0, ld1, connection_color,
                                             thickness, normalized, render_data);
   }
@@ -150,45 +160,6 @@ RenderAnnotation* AddPointRenderData(const Color& landmark_color,
 }
 
 }  // namespace
-
-// A calculator that converts Landmark proto to RenderData proto for
-// visualization. The input should be LandmarkList proto. It is also possible
-// to specify the connections between landmarks.
-//
-// Example config:
-// node {
-//   calculator: "LandmarksToRenderDataCalculator"
-//   input_stream: "NORM_LANDMARKS:landmarks"
-//   output_stream: "RENDER_DATA:render_data"
-//   options {
-//     [LandmarksToRenderDataCalculatorOptions.ext] {
-//       landmark_connections: [0, 1, 1, 2]
-//       landmark_color { r: 0 g: 255 b: 0 }
-//       connection_color { r: 0 g: 255 b: 0 }
-//       thickness: 4.0
-//     }
-//   }
-// }
-class LandmarksToRenderDataCalculator : public CalculatorBase {
- public:
-  LandmarksToRenderDataCalculator() {}
-  ~LandmarksToRenderDataCalculator() override {}
-  LandmarksToRenderDataCalculator(const LandmarksToRenderDataCalculator&) =
-      delete;
-  LandmarksToRenderDataCalculator& operator=(
-      const LandmarksToRenderDataCalculator&) = delete;
-
-  static ::mediapipe::Status GetContract(CalculatorContract* cc);
-
-  ::mediapipe::Status Open(CalculatorContext* cc) override;
-
-  ::mediapipe::Status Process(CalculatorContext* cc) override;
-
- private:
-  LandmarksToRenderDataCalculatorOptions options_;
-  std::vector<int> landmark_connections_;
-};
-REGISTER_CALCULATOR(LandmarksToRenderDataCalculator);
 
 ::mediapipe::Status LandmarksToRenderDataCalculator::GetContract(
     CalculatorContract* cc) {
@@ -231,6 +202,17 @@ REGISTER_CALCULATOR(LandmarksToRenderDataCalculator);
 
 ::mediapipe::Status LandmarksToRenderDataCalculator::Process(
     CalculatorContext* cc) {
+  // Check that landmarks are not empty and skip rendering if so.
+  // Don't emit an empty packet for this timestamp.
+  if (cc->Inputs().HasTag(kLandmarksTag) &&
+      cc->Inputs().Tag(kLandmarksTag).IsEmpty()) {
+    return ::mediapipe::OkStatus();
+  }
+  if (cc->Inputs().HasTag(kNormLandmarksTag) &&
+      cc->Inputs().Tag(kNormLandmarksTag).IsEmpty()) {
+    return ::mediapipe::OkStatus();
+  }
+
   auto render_data = absl::make_unique<RenderData>();
   bool visualize_depth = options_.visualize_landmark_depth();
   float z_min = 0.f;
@@ -255,15 +237,23 @@ REGISTER_CALCULATOR(LandmarksToRenderDataCalculator);
     visualize_depth &= ((z_max - z_min) > 1e-3);
     if (visualize_depth) {
       AddConnectionsWithDepth<LandmarkList, Landmark>(
-          landmarks, landmark_connections_, thickness, /*normalized=*/false,
+          landmarks, landmark_connections_, options_.utilize_visibility(),
+          options_.visibility_threshold(), thickness, /*normalized=*/false,
           z_min, z_max, render_data.get());
     } else {
       AddConnections<LandmarkList, Landmark>(
-          landmarks, landmark_connections_, options_.connection_color(),
+          landmarks, landmark_connections_, options_.utilize_visibility(),
+          options_.visibility_threshold(), options_.connection_color(),
           thickness, /*normalized=*/false, render_data.get());
     }
     for (int i = 0; i < landmarks.landmark_size(); ++i) {
       const Landmark& landmark = landmarks.landmark(i);
+
+      if (options_.utilize_visibility() &&
+          landmark.visibility() < options_.visibility_threshold()) {
+        continue;
+      }
+
       auto* landmark_data_render = AddPointRenderData(
           options_.landmark_color(), thickness, render_data.get());
       if (visualize_depth) {
@@ -288,15 +278,23 @@ REGISTER_CALCULATOR(LandmarksToRenderDataCalculator);
     visualize_depth &= ((z_max - z_min) > 1e-3);
     if (visualize_depth) {
       AddConnectionsWithDepth<NormalizedLandmarkList, NormalizedLandmark>(
-          landmarks, landmark_connections_, thickness, /*normalized=*/true,
+          landmarks, landmark_connections_, options_.utilize_visibility(),
+          options_.visibility_threshold(), thickness, /*normalized=*/true,
           z_min, z_max, render_data.get());
     } else {
       AddConnections<NormalizedLandmarkList, NormalizedLandmark>(
-          landmarks, landmark_connections_, options_.connection_color(),
+          landmarks, landmark_connections_, options_.utilize_visibility(),
+          options_.visibility_threshold(), options_.connection_color(),
           thickness, /*normalized=*/true, render_data.get());
     }
     for (int i = 0; i < landmarks.landmark_size(); ++i) {
       const NormalizedLandmark& landmark = landmarks.landmark(i);
+
+      if (options_.utilize_visibility() &&
+          landmark.visibility() < options_.visibility_threshold()) {
+        continue;
+      }
+
       auto* landmark_data_render = AddPointRenderData(
           options_.landmark_color(), thickness, render_data.get());
       if (visualize_depth) {
@@ -316,4 +314,5 @@ REGISTER_CALCULATOR(LandmarksToRenderDataCalculator);
   return ::mediapipe::OkStatus();
 }
 
+REGISTER_CALCULATOR(LandmarksToRenderDataCalculator);
 }  // namespace mediapipe

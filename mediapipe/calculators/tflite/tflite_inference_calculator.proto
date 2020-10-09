@@ -45,7 +45,13 @@ message TfLiteInferenceCalculatorOptions {
     message Gpu {
       // Experimental, Android/Linux only. Use TFLite GPU delegate API2 for
       // the NN inference.
+      // example:
+      //   delegate: { gpu { use_advanced_gpu_api: true } }
       optional bool use_advanced_gpu_api = 1 [default = false];
+
+      // Load pre-compiled serialized binary cache to accelerate init process.
+      // Only available for OpenCL delegate on Android.
+      optional bool use_kernel_caching = 2 [default = false];
     }
     // Android only.
     message Nnapi {}

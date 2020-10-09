@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache 2.0
-
-package(default_visibility = ["//visibility:public"])
-
 load("//mediapipe/gpu:metal.bzl", "metal_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library")
+
+licenses(["notice"])
+
+package(default_visibility = ["//visibility:public"])
 
 # Disabling GPU support is sometimes useful on desktop Linux because SwiftShader can
 # interfere with desktop GL. b/73494271
@@ -162,7 +162,7 @@ cc_library(
         "//conditions:default": [],
         "//mediapipe:apple": [
             "-x objective-c++",
-            "-fobjc-arc",
+            "-fobjc-arc",  # enable reference-counting
         ],
     }),
     visibility = ["//visibility:public"],
@@ -411,19 +411,28 @@ cc_library(
 )
 
 cc_library(
+    name = "gl_texture_buffer_pool",
+    srcs = ["gl_texture_buffer_pool.cc"],
+    hdrs = ["gl_texture_buffer_pool.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":gl_base",
+        ":gl_texture_buffer",
+        ":gpu_buffer",
+        ":gpu_shared_data_header",
+        "//mediapipe/framework:calculator_context",
+        "//mediapipe/framework:calculator_node",
+        "//mediapipe/framework/port:logging",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/synchronization",
+    ],
+)
+
+cc_library(
     name = "gpu_buffer_multi_pool",
-    srcs = ["gpu_buffer_multi_pool.cc"] + select({
-        "//conditions:default": [
-            "gl_texture_buffer_pool.cc",
-        ],
-        "//mediapipe:ios": [],
-        "//mediapipe:macos": [
-            "gl_texture_buffer_pool.cc",
-        ],
-    }),
+    srcs = ["gpu_buffer_multi_pool.cc"],
     hdrs = ["gpu_buffer_multi_pool.h"] + select({
         "//conditions:default": [
-            "gl_texture_buffer_pool.h",
         ],
         "//mediapipe:ios": [
             # The inclusions check does not see that this is provided by
@@ -432,7 +441,13 @@ cc_library(
             "pixel_buffer_pool_util.h",
         ],
         "//mediapipe:macos": [
-            "gl_texture_buffer_pool.h",
+        ],
+    }),
+    copts = select({
+        "//conditions:default": [],
+        "//mediapipe:apple": [
+            "-x objective-c++",
+            "-fobjc-arc",
         ],
     }),
     visibility = ["//visibility:public"],
@@ -448,6 +463,7 @@ cc_library(
     ] + select({
         "//conditions:default": [
             ":gl_texture_buffer",
+            ":gl_texture_buffer_pool",
         ],
         "//mediapipe:ios": [
             ":pixel_buffer_pool_util",
@@ -456,6 +472,7 @@ cc_library(
         "//mediapipe:macos": [
             ":pixel_buffer_pool_util",
             ":gl_texture_buffer",
+            ":gl_texture_buffer_pool",
         ],
     }),
 )

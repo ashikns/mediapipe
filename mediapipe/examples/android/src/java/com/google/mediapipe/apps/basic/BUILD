@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 # Basic library common across example apps.
 android_library(
@@ -73,6 +73,7 @@ android_binary(
         "binaryGraphName": "mobile_gpu.binarypb",
         "inputVideoStreamName": "input_video",
         "outputVideoStreamName": "output_video",
+        "flipFramesVertically": "True",
     },
     multidex = "native",
     deps = [

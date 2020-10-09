@@ -15,7 +15,7 @@
 
 load("//mediapipe/framework/port:build_config.bzl", "mediapipe_cc_proto_library")
 
-licenses(["notice"])  # Apache 2.0
+licenses(["notice"])
 
 package(default_visibility = ["//visibility:private"])
 
@@ -290,7 +290,9 @@ cc_library(
     deps = [
         ":concatenate_vector_calculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:classification_cc_proto",
         "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/port:integral_types",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
         "@org_tensorflow//tensorflow/lite:framework",
@@ -314,6 +316,37 @@ cc_library(
         "//mediapipe/framework/formats:detection_cc_proto",
     ],
     alwayslink = 1,
+)
+
+cc_library(
+    name = "concatenate_normalized_landmark_list_calculator",
+    srcs = ["concatenate_normalized_landmark_list_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":concatenate_vector_calculator_cc_proto",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/port:ret_check",
+        "//mediapipe/framework/port:status",
+    ],
+    alwayslink = 1,
+)
+
+cc_test(
+    name = "concatenate_normalized_landmark_list_calculator_test",
+    srcs = ["concatenate_normalized_landmark_list_calculator_test.cc"],
+    deps = [
+        ":concatenate_normalized_landmark_list_calculator",
+        ":concatenate_vector_calculator_cc_proto",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework:calculator_runner",
+        "//mediapipe/framework:timestamp",
+        "//mediapipe/framework/formats:landmark_cc_proto",
+        "//mediapipe/framework/port:gtest_main",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "@com_google_absl//absl/strings",
+    ],
 )
 
 cc_test(
@@ -450,6 +483,21 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_test(
+    name = "mux_calculator_test",
+    srcs = ["mux_calculator_test.cc"],
+    deps = [
+        ":mux_calculator",
+        ":round_robin_demux_calculator",
+        ":split_vector_calculator",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework:calculator_runner",
+        "//mediapipe/framework/port:gtest_main",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+    ],
+)
+
 cc_library(
     name = "packet_cloner_calculator",
     srcs = ["packet_cloner_calculator.cc"],
@@ -558,6 +606,35 @@ cc_library(
         "//mediapipe/framework/port:status",
     ],
     alwayslink = 1,
+)
+
+cc_library(
+    name = "packet_presence_calculator",
+    srcs = ["packet_presence_calculator.cc"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework:packet",
+        "//mediapipe/framework:timestamp",
+        "//mediapipe/framework/port:status",
+    ],
+    alwayslink = 1,
+)
+
+cc_test(
+    name = "packet_presence_calculator_test",
+    srcs = ["packet_presence_calculator_test.cc"],
+    deps = [
+        ":gate_calculator",
+        ":packet_presence_calculator",
+        "//mediapipe/framework:calculator_framework",
+        "//mediapipe/framework:calculator_runner",
+        "//mediapipe/framework:timestamp",
+        "//mediapipe/framework/port:gtest_main",
+        "//mediapipe/framework/port:parse_text_proto",
+        "//mediapipe/framework/port:status",
+        "//mediapipe/framework/tool:sink",
+    ],
 )
 
 cc_library(
@@ -947,7 +1024,6 @@ cc_test(
         "//mediapipe/framework:calculator_runner",
         "//mediapipe/framework/port:gtest_main",
         "//mediapipe/framework/port:parse_text_proto",
-        "//mediapipe/framework/port:status",
     ],
 )
 
@@ -1045,6 +1121,7 @@ cc_library(
         ":constant_side_packet_calculator_cc_proto",
         "//mediapipe/framework:calculator_framework",
         "//mediapipe/framework:collection_item_id",
+        "//mediapipe/framework/port:integral_types",
         "//mediapipe/framework/port:ret_check",
         "//mediapipe/framework/port:status",
     ],

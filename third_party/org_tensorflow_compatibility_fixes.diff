@@ -23,3 +23,15 @@ index b7c22ae77b..d0ba7b48b4 100644
        pct_samples.points.push_back(pct);
      }
    }
+diff --git a/tensorflow/core/platform/test.h b/tensorflow/core/platform/test.h
+index ba50783765..5de5ea01f0 100644
+--- a/tensorflow/core/platform/test.h
++++ b/tensorflow/core/platform/test.h
+@@ -42,7 +42,6 @@ limitations under the License.
+ #if defined(PLATFORM_GOOGLE) || defined(PLATFORM_GOOGLE_ANDROID)
+ #include "testing/base/public/gmock.h"
+ #else
+-#include <gmock/gmock-generated-matchers.h>
+ #include <gmock/gmock-matchers.h>
+ #include <gmock/gmock-more-matchers.h>
+ #endif
