@@ -2,6 +2,11 @@ workspace(name = "mediapipe")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+local_repository(
+    name = "videoengine",
+    path = "../videoengine"
+)
+
 skylib_version = "0.9.0"
 http_archive(
     name = "bazel_skylib",
@@ -215,7 +220,13 @@ new_local_repository(
 new_local_repository(
     name = "windows_opencv",
     build_file = "@//third_party:opencv_windows.BUILD",
-    path = "C:\\opencv\\build",
+    path = "../opencv",
+)
+
+new_local_repository(
+    name = "windows_angle",
+    build_file = "@//third_party:angle_windows.BUILD",
+    path = "../angle",
 )
 
 http_archive(
@@ -372,6 +383,7 @@ http_archive(
     ],
     patches = [
         "@//third_party:org_tensorflow_compatibility_fixes.diff",
+        "@//third_party:org_tensorflow_build_with_angle.diff",
     ],
     patch_args = [
         "-p1",

@@ -1,0 +1,41 @@
+diff --git a/tensorflow/lite/c/common.h b/tensorflow/lite/c/common.h
+index 31405dfb99..3f1f66e908 100644
+--- a/tensorflow/lite/c/common.h
++++ b/tensorflow/lite/c/common.h
+@@ -251,11 +251,7 @@ void TfLiteFloatArrayFree(TfLiteFloatArray* a);
+ #define TFL_CAPI_EXPORT
+ #else
+ #if defined(_WIN32)
+-#ifdef TFL_COMPILE_LIBRARY
+-#define TFL_CAPI_EXPORT __declspec(dllexport)
+-#else
+-#define TFL_CAPI_EXPORT __declspec(dllimport)
+-#endif  // TFL_COMPILE_LIBRARY
++#define TFL_CAPI_EXPORT
+ #else
+ #define TFL_CAPI_EXPORT __attribute__((visibility("default")))
+ #endif  // _WIN32
+diff --git a/tensorflow/lite/delegates/gpu/BUILD b/tensorflow/lite/delegates/gpu/BUILD
+index d69bed4c03..4d0628362f 100644
+--- a/tensorflow/lite/delegates/gpu/BUILD
++++ b/tensorflow/lite/delegates/gpu/BUILD
+@@ -207,6 +207,7 @@ cc_library(
+         "@com_google_absl//absl/types:variant",
+         "@opencl_headers",
+         "@vulkan_headers//:vulkan_headers_no_prototypes",
++        "@windows_angle//:angle",
+     ],
+ )
+ 
+diff --git a/tensorflow/lite/delegates/gpu/gl/BUILD b/tensorflow/lite/delegates/gpu/gl/BUILD
+index d39f5e3c34..fb56a48c7b 100644
+--- a/tensorflow/lite/delegates/gpu/gl/BUILD
++++ b/tensorflow/lite/delegates/gpu/gl/BUILD
+@@ -244,6 +244,7 @@ cc_library(
+         ":portable",
+         "//tensorflow/lite/delegates/gpu/common:status",
+         "@com_google_absl//absl/strings",
++        "@windows_angle//:angle",
+     ],
+ )
+ 
