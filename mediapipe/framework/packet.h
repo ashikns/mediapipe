@@ -441,11 +441,16 @@ struct MessageRegistrationImpl {
   static NoDestructor<mediapipe::RegistrationToken> registration;
 };
 
+template <typename T>
+std::unique_ptr<Holder<T>> GetPointer() {
+    return absl::make_unique<Holder<T>>(new T);
+}
+
 // Static members of template classes can be defined in the header.
 template <typename T>
 NoDestructor<mediapipe::RegistrationToken>
     MessageRegistrationImpl<T>::registration(MessageHolderRegistry::Register(
-        T{}.GetTypeName(), [] { return absl::make_unique<Holder<T>>(new T); }));
+        T{}.GetTypeName(), GetPointer<T>));
 
 // For non-Message payloads, this does nothing.
 template <typename T, typename Enable = void>

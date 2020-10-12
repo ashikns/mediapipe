@@ -14,10 +14,12 @@ build:linux --host_cxxopt=-std=c++14
 build:linux --copt=-w
 
 # windows
-build:windows --cxxopt=/std:c++14
-build:windows --host_cxxopt=/std:c++14
+build:windows --cxxopt=/std:c++latest
+build:windows --host_cxxopt=/std:c++latest
 build:windows --copt=/w
 # For using M_* math constants on Windows with MSVC.
+build:windows --copt=/D_HAS_FEATURES_REMOVED_IN_CXX20
+build:windows --host_copt=/D_HAS_FEATURES_REMOVED_IN_CXX20
 build:windows --copt=/D_USE_MATH_DEFINES
 build:windows --host_copt=/D_USE_MATH_DEFINES
 

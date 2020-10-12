@@ -73,12 +73,14 @@ class LegacyCalculatorSupport {
 // definitions must be in the .cc file. However, a declaration still needs to be
 // included in the header, or some compilers will assume they have no
 // definition.
+#if !defined(_MSC_VER)
 template <>
 thread_local CalculatorContext*
     LegacyCalculatorSupport::Scoped<CalculatorContext>::current_;
 template <>
 thread_local CalculatorContract*
     LegacyCalculatorSupport::Scoped<CalculatorContract>::current_;
+#endif
 
 }  // namespace mediapipe
 
